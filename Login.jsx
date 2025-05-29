@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import logo from './login.png'
+import logo from './login.png';
 
 function Login() {
     const navigate = useNavigate();
@@ -11,6 +11,7 @@ function Login() {
     const [isFormValid, setIsFormValid] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [touchedFields, setTouchedFields] = useState({ email: false, role: false });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -21,14 +22,20 @@ function Login() {
 
     const validateForm = (data) => {
         const newErrors = {};
-        if (!data.email.match(/^[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}$/)) newErrors.email = 'Enter a valid email';
-        if (!data.role) newErrors.role = 'Please select a role';
+        if (!data.email.match(/^[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}$/)) {
+            newErrors.email = 'Enter a valid email';
+        }
+        if (!data.role) {
+            newErrors.role = 'Please select a role';
+        }
         setErrors(newErrors);
         setIsFormValid(Object.keys(newErrors).length === 0);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setTouchedFields({ email: true, role: true });
+        validateForm(formData);
         if (!isFormValid) return;
 
         try {
@@ -36,10 +43,13 @@ function Login() {
             if (response.data.success) {
                 localStorage.setItem('user', JSON.stringify(response.data.data));
                 setSuccessMessage("Login Successful!");
-                setTimeout(() => { setSuccessMessage(""); navigate("/dashboard1") }, 2000);
+                setTimeout(() => {
+                    setSuccessMessage("");
+                    navigate("/dashboard1");
+                }, 2000);
             } else {
                 setErrorMessage("Invalid Credentials!");
-                setTimeout(() => { setErrorMessage(""); }, 2000);
+                setTimeout(() => setErrorMessage(""), 2000);
             }
         } catch (error) {
             setErrorMessage("Invalid email, password, or role");
@@ -64,7 +74,7 @@ function Login() {
                 {/* IMAGE COLUMN */}
                 <div className="col-md-6 d-none d-md-flex align-items-center justify-content-center p-0 bg-primary">
                     <img
-                        src={logo} // You can replace this with any relevant URL
+                        src={logo}
                         alt="Login visual"
                         className="img-fluid w-100 h-100 object-fit-cover"
                         style={{ objectFit: 'cover' }}
@@ -83,9 +93,14 @@ function Login() {
                                 className="form-control"
                                 value={formData.email}
                                 onChange={handleChange}
+                                onBlur={() => setTouchedFields(prev => ({ ...prev, email: true }))}
                                 required
                             />
-                            {errors.email && <small className="text-danger">{errors.email}</small>}
+                            <div style={{ minHeight: '20px' }}>
+                                {touchedFields.email && errors.email && (
+                                    <small className="text-danger">{errors.email}</small>
+                                )}
+                            </div>
                         </div>
 
                         <div className="mb-3">
@@ -110,7 +125,10 @@ function Login() {
                                         name="role"
                                         value="vendor"
                                         checked={formData.role === 'vendor'}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            setTouchedFields(prev => ({ ...prev, role: true }));
+                                        }}
                                     />
                                     <label className="form-check-label">Vendor</label>
                                 </div>
@@ -121,12 +139,19 @@ function Login() {
                                         name="role"
                                         value="manager"
                                         checked={formData.role === 'manager'}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            setTouchedFields(prev => ({ ...prev, role: true }));
+                                        }}
                                     />
                                     <label className="form-check-label">Manager</label>
                                 </div>
                             </div>
-                            {errors.role && <small className="text-danger d-block">{errors.role}</small>}
+                            <div style={{ minHeight: '20px' }}>
+                                {touchedFields.role && errors.role && (
+                                    <small className="text-danger d-block">{errors.role}</small>
+                                )}
+                            </div>
                         </div>
 
                         <button type="submit" className="btn btn-primary w-100" disabled={!isFormValid}>
